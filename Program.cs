@@ -20,6 +20,84 @@ namespace SecureFileManager
         public static readonly string FilesFolder = Path.Combine(DataDir, "files");
     }
 
+    public class User
+    {
+        public string Username { get; }
+
+        public string Password { get; }
+
+        public User(string username, string password)
+        {
+            Username = username;
+            Password = password;
+        }
+
+        public static string EncryptPassword(string password)
+        {
+            using (var md5 = MD5.Create())
+            {
+                var inputBytes = System.Text.Encoding.ASCII.GetBytes(password);
+                var hashBytes = md5.ComputeHash(inputBytes);
+
+                return Convert.ToBase64String(hashBytes);
+            }
+        }
+    }
+
+    public class UserAuthenticator
+    {
+        private readonly List<User> _users;
+
+        public UserAuthenticator()
+        {
+            if (!File.Exists(Constants.UsersFilePath))
+            {
+                _users = new List<User>();
+                return;
+            }
+
+            var json = File.ReadAllText(Constants.UsersFilePath);
+            _users = JsonConvert.DeserializeObject<List<User>>(json);
+
+            foreach (var user in _users)
+            {
+                Console.WriteLine($"Username: {user.Username}, Password: {user.Password}");
+            }
+        }
+
+        public void RegisterUser(string username, string password)
+        {
+            if (_users.Find(u => u.Username == username) != null)
+            {
+                Console.WriteLine("Username already exists.");
+                return;
+            }
+
+            _users.Add(new User(username, User.EncryptPassword(password)));
+            SaveUsersToFile();
+            Console.WriteLine("User registered successfully.");
+        }
+
+        public User AuthenticateUser(string username, string password)
+        {
+            var user = _users.Find(u => u.Username == username);
+            if (user != null && user.Password == new User(username, User.EncryptPassword(password)).Password)
+            {
+                Console.WriteLine("Authentication successful.");
+                return user;
+            }
+
+            Console.WriteLine("Authentication failed.");
+            return null;
+        }
+
+        private void SaveUsersToFile()
+        {
+            var json = JsonConvert.SerializeObject(_users);
+            File.WriteAllText(Constants.UsersFilePath, json);
+        }
+    }
+
     public abstract class FileEncryption
     {
         public static byte[] GenerateEncryptionKey()
@@ -222,6 +300,21 @@ namespace SecureFileManager
 
                 switch (option)
                 {
+
+                    case "1":
+                        Console.Write("Enter username: ");
+                        var regUsername = Console.ReadLine();
+                        Console.Write("Enter password: ");
+                        var regPassword = Console.ReadLine();
+                        userAuthenticator.RegisterUser(regUsername, regPassword);
+                        break;
+                    case "2":
+                        Console.Write("Enter username: ");
+                        var authUsername = Console.ReadLine();
+                        Console.Write("Enter password: ");
+                        var authPassword = Console.ReadLine();
+                        currentUser = userAuthenticator.AuthenticateUser(authUsername, authPassword);
+                        break;
                     case "3":
                         if (currentUser == null)
                         {
