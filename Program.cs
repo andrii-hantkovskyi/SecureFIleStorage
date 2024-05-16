@@ -11,7 +11,7 @@ namespace SecureFileManager
     {
         private static readonly string BaseDir =
             Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"..\..\"));
-        
+
         private static readonly string DataDir = Path.Combine(BaseDir, "Data");
 
         public static readonly string KeyFilePath = Path.Combine(BaseDir, "encryption.key");
@@ -58,11 +58,6 @@ namespace SecureFileManager
 
             var json = File.ReadAllText(Constants.UsersFilePath);
             _users = JsonConvert.DeserializeObject<List<User>>(json);
-
-            foreach (var user in _users)
-            {
-                Console.WriteLine($"Username: {user.Username}, Password: {user.Password}");
-            }
         }
 
         public void RegisterUser(string username, string password)
@@ -100,38 +95,6 @@ namespace SecureFileManager
 
     public abstract class FileEncryption
     {
-        public static byte[] GenerateEncryptionKey()
-        {
-            using (var aesAlg = Aes.Create())
-            {
-                aesAlg.GenerateKey();
-                var key = aesAlg.Key;
-                WriteKeyToFile(key);
-                return key;
-            }
-        }
-
-        public static byte[] GenerateIv()
-        {
-            using (var aesAlg = Aes.Create())
-            {
-                aesAlg.GenerateIV();
-                var iv = aesAlg.IV;
-                WriteIvToFile(iv);
-                return iv;
-            }
-        }
-
-        private static void WriteKeyToFile(byte[] key)
-        {
-            File.WriteAllBytes(Constants.KeyFilePath, key);
-        }
-
-        private static void WriteIvToFile(byte[] iv)
-        {
-            File.WriteAllBytes(Constants.IvFilePath, iv);
-        }
-
         private static byte[] ReadKeyFromFile()
         {
             return File.ReadAllBytes(Constants.KeyFilePath);
@@ -287,7 +250,7 @@ namespace SecureFileManager
         private static void Main()
         {
             var looping = true;
-            
+
             var userAuthenticator = new UserAuthenticator();
             User currentUser = null;
 
@@ -300,7 +263,6 @@ namespace SecureFileManager
 
                 switch (option)
                 {
-
                     case "1":
                         Console.Write("Enter username: ");
                         var regUsername = Console.ReadLine();
