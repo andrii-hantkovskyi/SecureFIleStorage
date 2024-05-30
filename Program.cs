@@ -59,6 +59,19 @@ namespace SecureFileManager
             var json = File.ReadAllText(Constants.UsersFilePath);
             _users = JsonConvert.DeserializeObject<List<User>>(json);
         }
+        public static bool CheckPasswordComplexity(string password)
+        {
+            if (password.Length < 8 ||
+                !password.Any(char.IsUpper) ||
+                !password.Any(char.IsLower) ||
+                !password.Any(char.IsDigit) ||
+                password.All(char.IsLetterOrDigit))
+            {
+                return false;
+            }
+
+            return true;
+        }
 
         public void RegisterUser(string username, string password)
         {
@@ -67,10 +80,13 @@ namespace SecureFileManager
                 Console.WriteLine("Username already exists.");
                 return;
             }
-
-            _users.Add(new User(username, User.EncryptPassword(password)));
-            SaveUsersToFile();
-            Console.WriteLine("User registered successfully.");
+            if (UserAuthenticator.CheckPasswordComplexity(password) == true)
+            {
+                _users.Add(new User(username, User.EncryptPassword(password)));
+                SaveUsersToFile();
+                Console.WriteLine("User registered successfully.");
+            }
+            else Console.WriteLine("Password just simple");
         }
 
         public User AuthenticateUser(string username, string password)
